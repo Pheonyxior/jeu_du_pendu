@@ -7,16 +7,7 @@ namespace jeu_du_pendu
     {
         private static List<string> m_wordlist = new List<string> // liste des différents mots pour la réponse du pendu
         {
-            "RATHALOS",
-            "PALKIA",
-            "EDGEWORTH",
-            "YOSHI",
-            "EZIO",
-            "BURDEN",
-            "VANQUISH",
-            "EDELGARD",
-            "WELLAN",
-            "LAMPEROUGE"
+           
         };
 
         private static readonly Random index = new Random();        
@@ -29,33 +20,38 @@ namespace jeu_du_pendu
         private static void Game()
         // gère le déroulement de la partie
         {
-            bool playing = true;
+            bool playing = true;   // continue le jeu tant que true
 
             while (playing == true)
 
             {
-                bool game_over = false;
+                bool game_over = false;    // continue la partie tant que true
 
                 int remaining_attempts = 6;  // nombre de "vies" du joueur
 
+
+                m_read_textfile();  
+
                 string m_mystery_word = m_wordlist[index.Next(m_wordlist.Count)];  // prends un mot aléatoire dans la liste de mots "wordlist"                               
 
-                m_take_chars_from_mystery_word(m_mystery_word);
+                m_take_chars_from_mystery_word(m_mystery_word);               
 
                 while (game_over == false)
                 {
-
+                    m_print_lifes(remaining_attempts);
+                    
                     m_print_wrong_letters();
 
                     m_print_tree(remaining_attempts);
 
                     m_print_mystery_word();
                     Console.WriteLine("\n");
-
+                    
                     if (m_test_guess() == false)
                     {
                         remaining_attempts--;
                     }
+                    
                     Console.Clear();
 
                     if (remaining_attempts == 0)
@@ -78,17 +74,17 @@ namespace jeu_du_pendu
                     Console.WriteLine("Il faut rentrer soit 1 (oui) soit 2 (non).");
                 }
 
-                if (answer == 2)
-                {
-                    playing = false;
-                }
-
-                else if (answer == 1)
-                {
+                if (answer == 1)
+                { 
                     m_mystery_letters.Clear();
                     m_wrong_letters.Clear();
                     m_guessed_letters.Clear();
-                    Console.Clear();
+                    Console.Clear();                
+                }
+
+                else if (answer == 2)
+                {
+                    playing = false;
                 }
             }          
         }
@@ -98,23 +94,32 @@ namespace jeu_du_pendu
 
         };
 
-        private static char[] m_mystery_word_array;       
+        private static void m_read_textfile()
+        // lit le textfile "gamelist" et ajoute chaque liste à la liste de string "m_wordlist"
+        {
+            string[] lines = System.IO.File.ReadAllLines(@"C:\Users\Victor\Desktop\projets GDC\c#\gamelist.txt");
+            foreach (string line in lines)
+            {
+                //Console.WriteLine("/t" + line);
+                m_wordlist.Add(line);
+            }
+            
+            //Console.WriteLine("Contents of gamelist.txt = {0}", words);
+        }
 
         private static void m_take_chars_from_mystery_word(string m_mystery_word)
         // prend les charactères du mot mystère et les ajoute à la liste de lettres mystères ainsi qu'au tableau qui va afficher les lettres dans le jeu
         {
             foreach (char c in m_mystery_word)
             {                             
-                m_mystery_letters.Add(c);                
+                m_mystery_letters.Add(c);
+                
+                if (c == ' ')
+                {
+                    m_guessed_letters.Add(c);
+                }
             }
-
-            int x = 0;
-            m_mystery_word_array = new char[m_mystery_letters.Count];
-            foreach (char c in m_mystery_letters)
-            {
-                m_mystery_word_array[x] = c;
-                x++;
-            }
+            
         }
 
         private static List<char> m_wrong_letters = new List<char>
@@ -122,9 +127,16 @@ namespace jeu_du_pendu
             
         };
 
+        private static void m_print_lifes(int remaining_attempts)
+        {
+            Console.WriteLine("Vies restantes : " + remaining_attempts);
+        }
+
+
+
         private static void m_print_wrong_letters()
         // affiche la liste des lettres qui ne sont pas dans le mot mystère
-        {
+        {           
             Console.WriteLine("Lettres qui ne sont pas dans le mot:  ");
             foreach (char c in m_wrong_letters)
             {
@@ -317,7 +329,7 @@ namespace jeu_du_pendu
         {
             Console.Write(" ");
 
-            foreach (char c in m_mystery_word_array)
+            foreach (char c in m_mystery_letters)
             {
                 if (m_guessed_letters.Contains(c))
                 {
@@ -336,8 +348,8 @@ namespace jeu_du_pendu
             if (m_mystery_letters.Contains(guess))
             {
                 if (m_guessed_letters.Contains(guess))
-                {
-                    return true;
+                {                    
+                    return true;                    
                 }
                 else
                 {
@@ -346,8 +358,8 @@ namespace jeu_du_pendu
                 }              
             }
             else if (m_wrong_letters.Contains(guess))
-            {
-                return false;
+            {                
+                return true;
             }
             else
             {
@@ -360,9 +372,10 @@ namespace jeu_du_pendu
         // prend une entrée du joueur pour deviner une lettre du mot mystère
         {
             char chosen_letter;
-            while(!char.TryParse(Console.ReadLine(), out chosen_letter) || !Char.IsLetter(chosen_letter))
-            {
-                Console.WriteLine("Il faut rentrer une lettre.");
+            while(!char.TryParse(Console.ReadLine(), out chosen_letter) || !Char.IsLetter(chosen_letter) || m_guessed_letters.Contains(Char.ToUpper(chosen_letter)) || m_wrong_letters.Contains(Char.ToUpper(chosen_letter)))
+            {                              
+                Console.WriteLine("Il faut rentrer une lettre (que tu n'as pas déjà rentré).");               
+
             }
             chosen_letter = Char.ToUpper(chosen_letter);
             Console.WriteLine(chosen_letter);
